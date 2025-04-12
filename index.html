@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoogleスプレッドシートデータをOSMに表示</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <title>GoogleスプレッドシートデータをGoogleマップに表示</title>
+    
+    <!-- Google Maps APIの読み込み（APIキーを指定） -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC3AxRzbZVrA54KaoyokwpHyzTOciJwd9w"></script>
 </head>
 <body>
     <h2>Googleスプレッドシートのデータを地図に表示</h2>
-    <div id="map" style="height: 500px;"></div>
+    <div id="map" style="height: 500px; width: 100%;"></div>
 
     <script>
         // ============================
@@ -19,49 +20,58 @@
         var GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9VIQ9xYPNsCj4wR_X7q9Jw3W8fEl_Aj6Kb3UXRqwKXmr0bXv0hGTsvqDttSql0elk/exec"; // データ取得用URL
 
         // ============================
-        // 地図の初期化
+        // Googleマップの初期化
         // ============================
 
-        var map = L.map('map').setView([33.5892, 130.4017], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        function initMap() {
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 33.5892, lng: 130.4017 }, // 福岡市中心
+                zoom: 14
+            });
 
-        // ============================
-        // スプレッドシートデータの取得と表示
-        // ============================
+            // スプレッドシートデータの取得と表示
+            fetch(GOOGLE_APPS_SCRIPT_URL)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("取得データ:", data); // デバッグ用ログ
+                    data.forEach(place => {
+                        console.log("スポットデータ:", place); // 各スポットの情報を確認
+                        
+                        if (place.lat && place.lng) {
+                            let description = place.description && place.description.trim() !== "" 
+                                ? place.description 
+                                : "情報がありません";
 
-        fetch(GOOGLE_APPS_SCRIPT_URL)
-            .then(response => response.json())
-            .then(data => {
-                console.log("取得データ:", data); // デバッグ用ログ
+                            let mapLink = place.mapLink && place.mapLink.trim() !== "" && place.mapLink.startsWith("http")
+                                ? `<a href="${place.mapLink}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>` 
+                                : "";
 
-                data.forEach(place => {
-                    console.log("スポットデータ:", place); // 各スポットの情報を確認
+                            // マーカーを追加
+                            var marker = new google.maps.Marker({
+                                position: { lat: parseFloat(place.lat), lng: parseFloat(place.lng) },
+                                map: map,
+                                title: place.name
+                            });
 
-                    if (place.lat && place.lng) {
-                        let description = place.description && place.description.trim() !== "" 
-                            ? place.description 
-                            : "情報がありません";
+                            // マーカーのポップアップ情報
+                            var infoWindow = new google.maps.InfoWindow({
+                                content: `<b>${place.name}</b><br><p>${description}</p><br>${mapLink}`
+                            });
 
-                        let mapLink = place.mapLink && place.mapLink.trim() !== "" && place.mapLink.startsWith("http")
-                            ? `<a href="${place.mapLink}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>` 
-                            : "";
+                            // マーカーをクリックしたときにポップアップを開く
+                            marker.addListener("click", function () {
+                                infoWindow.open(map, marker);
+                            });
+                        } else {
+                            console.error("緯度・経度が見つからない:", place);
+                        }
+                    });
+                })
+                .catch(error => console.error("データ取得エラー:", error));
+        }
 
-                        // マーカーを追加し、ポップアップを設定
-                        L.marker([parseFloat(place.lat), parseFloat(place.lng)])
-                            .addTo(map)
-                            .bindPopup(`
-                                <b>${place.name}</b><br>
-                                <p>${description}</p><br>
-                                ${mapLink}
-                            `);
-                    } else {
-                        console.error("緯度・経度が見つからない:", place);
-                    }
-                });
-            })
-            .catch(error => console.error("データ取得エラー:", error));
+        // Google Maps APIのロード後に `initMap()` を実行
+        window.onload = initMap;
     </script>
 </body>
 </html>
