@@ -30,26 +30,26 @@
         // ============================
         // スプレッドシートデータの取得と表示（ここに追加）
         // ============================
-    
-        fetch(GOOGLE_APPS_SCRIPT_URL)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("HTTPエラー: " + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("取得データ:", data); // コンソールでデータ確認
-                data.forEach(place => {
-                    if (place.lat && place.lng) {  
-                        L.marker([parseFloat(place.lat), parseFloat(place.lng)]).addTo(map)
-                            .bindPopup(place.name);
-                    } else {
-                        console.error("緯度・経度が見つからない:", place);
-                    }
-                });
-            })
-            .catch(error => console.error("データ取得エラー:", error));
+	    
+	fetch(GOOGLE_APPS_SCRIPT_URL)
+	    .then(response => response.json())
+	    .then(data => {
+	        console.log("取得データ:", data);
+	        data.forEach(place => {
+	            if (place.lat && place.lng) {  
+	                L.marker([parseFloat(place.lat), parseFloat(place.lng)])
+	                    .addTo(map)
+	                    .bindPopup(`
+	                        <b>${place.name}</b><br>
+	                        <p>${place.description}</p><br>
+	                        <a href="${place.mapLink}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>
+	                    `);
+	            } else {
+	                console.error("緯度・経度が見つからない:", place);
+	            }
+	        });
+	    })
+	    .catch(error => console.error("データ取得エラー:", error));
     </script>
 </body>
 </html>
