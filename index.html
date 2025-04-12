@@ -26,17 +26,27 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
-
+    
         // ============================
-        // スプレッドシートデータの取得と表示
+        // スプレッドシートデータの取得と表示（ここに追加）
         // ============================
-
-        fetch(GOOGLE_APPS_SCRIPT_URL)  // Google Apps Script のURLからデータを取得
-            .then(response => response.json())  // JSONデータとして処理
+    
+        fetch(GOOGLE_APPS_SCRIPT_URL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("HTTPエラー: " + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log("取得データ:", data); // コンソールでデータ確認
                 data.forEach(place => {
-                    L.marker([place.lat, place.lng]).addTo(map)
-                        .bindPopup(place.name);
+                    if (place.lat && place.lng) {  
+                        L.marker([parseFloat(place.lat), parseFloat(place.lng)]).addTo(map)
+                            .bindPopup(place.name);
+                    } else {
+                        console.error("緯度・経度が見つからない:", place);
+                    }
                 });
             })
             .catch(error => console.error("データ取得エラー:", error));
