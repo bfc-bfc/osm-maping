@@ -34,12 +34,14 @@
         fetch(GOOGLE_APPS_SCRIPT_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("取得データ:", data);
+                console.log("取得データ:", data); // データ確認
                 data.forEach(place => {
                     if (place.lat && place.lng) {  
-                        let description = place.description ? place.description : "説明がありません";
-                        let mapLink = place.mapLink ? `<a href="${place.mapLink}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>` : "リンクなし";
-
+                        let description = place.description && place.description !== "説明がありません" ? place.description : "説明がありません";
+                        let mapLink = place.mapLink && place.mapLink !== "リンクなし" 
+                            ? `<a href="${encodeURI(place.mapLink)}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>` 
+                            : "リンクなし";
+        
                         L.marker([parseFloat(place.lat), parseFloat(place.lng)])
                             .addTo(map)
                             .bindPopup(`
