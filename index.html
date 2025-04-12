@@ -1,80 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8"> <!-- 文字コードをUTF-8に設定 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- スマホ対応のビューポート設定 -->
-    <title>GoogleスプレッドシートデータをOSMに表示</title> <!-- タイトル設定 -->
-
-    <!-- Leafletのスタイルシートを読み込み（OpenStreetMap用） -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoogleスプレッドシートデータをOSMに表示</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <!-- LeafletのJavaScriptライブラリを読み込み（地図描画用） -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    <h2>Googleスプレッドシートのデータを地図に表示</h2> <!-- ページタイトル -->
-    <div id="map" style="height: 500px;"></div> <!-- 地図を表示するための領域 -->
+    <h2>Googleスプレッドシートのデータを地図に表示</h2>
+    <div id="map" style="height: 500px;"></div>
 
     <script>
         // ============================
         // 設定値（変更が必要な箇所）
         // ============================
 
-        // Google Apps ScriptのウェブアプリURL（スプレッドシートからデータを取得するためのAPI）
-        var GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9VIQ9xYPNsCj4wR_X7q9Jw3W8fEl_Aj6Kb3UXRqwKXmr0bXv0hGTsvqDttSql0elk/exec";
+        var GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9VIQ9xYPNsCj4wR_X7q9Jw3W8fEl_Aj6Kb3UXRqwKXmr0bXv0hGTsvqDttSql0elk/exec"; // データ取得用URL
 
         // ============================
         // 地図の初期化
         // ============================
 
-        // Leafletの地図オブジェクトを作成し、初期表示位置を設定（福岡の位置に設定）
         var map = L.map('map').setView([33.5892, 130.4017], 14);
-
-        // OpenStreetMapのタイルレイヤーを追加し、地図の見た目を設定
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors' // OpenStreetMapの著作権表記
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
         // ============================
         // スプレッドシートデータの取得と表示
         // ============================
 
-        fetch(GOOGLE_APPS_SCRIPT_URL) // Google Apps ScriptのAPIからデータを取得
-            .then(response => response.json()) // JSON形式のデータとして受け取る
+        fetch(GOOGLE_APPS_SCRIPT_URL)
+            .then(response => response.json())
             .then(data => {
-                console.log("取得データ:", data); // Consoleに取得したデータを表示（デバッグ用）
+                console.log("取得データ:", data); // デバッグ用ログ
 
-                // スプレッドシートから取得した各スポットデータを処理
                 data.forEach(place => {
-                    console.log("スポットデータ:", place); // 個別のスポットデータをログに出力（デバッグ用）
+                    console.log("スポットデータ:", place); // 各スポットの情報を確認
 
-                    // 緯度・経度が存在するデータのみ処理する
-                    if (place.lat && place.lng) {  
-                        // 説明が空欄の場合は「説明がありません」とする
-                        let description = (place.description && place.description.trim() !== "") 
+                    if (place.lat && place.lng) {
+                        let description = place.description && place.description.trim() !== "" 
                             ? place.description 
-                            : "説明がありません";
+                            : "情報がありません";
 
-                        // Googleマップのリンクが空欄でない場合はリンクを追加
-                        let mapLink = (place.mapLink && place.mapLink.trim() !== "" && place.mapLink !== "リンクなし") 
+                        let mapLink = place.mapLink && place.mapLink.trim() !== "" && place.mapLink.startsWith("http")
                             ? `<a href="${place.mapLink}" target="_blank" style="color: blue; font-weight: bold;">Googleマップへ</a>` 
                             : "";
 
-                        // 地図上にスポットのマーカー（ピン）を追加し、ポップアップ表示
+                        // マーカーを追加し、ポップアップを設定
                         L.marker([parseFloat(place.lat), parseFloat(place.lng)])
                             .addTo(map)
                             .bindPopup(`
-                                <b>${place.name}</b><br> <!-- スポットの名前 -->
-                                <p>${description}</p><br> <!-- スポットの説明 -->
-                                ${mapLink} <!-- Googleマップへのリンク -->
+                                <b>${place.name}</b><br>
+                                <p>${description}</p><br>
+                                ${mapLink}
                             `);
                     } else {
-                        // 緯度・経度が見つからない場合はエラーメッセージを出力
                         console.error("緯度・経度が見つからない:", place);
                     }
                 });
             })
-            .catch(error => console.error("データ取得エラー:", error)); // データ取得時のエラーをコンソールに表示
+            .catch(error => console.error("データ取得エラー:", error));
     </script>
 </body>
 </html>
